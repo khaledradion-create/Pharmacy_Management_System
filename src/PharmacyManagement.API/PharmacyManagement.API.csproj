@@ -1,0 +1,115 @@
+using Microsoft.EntityFrameworkCore;
+using PharmacyManagement.Core.Entities;
+using PharmacyManagement.Data;
+
+namespace PharmacyManagement.Services;
+
+public class CreateInvoiceRequest
+{
+    public int CustomerId { get; set; }
+    public int? CashierId { get; set; }
+    public string PaymentMethod { get; set; } = "Cash";
+    public string PaymentStatus { get; set; } = "Paid";
+    public string? Notes { get; set; }
+    public List<CreateInvoiceItemRequest> Items { get; set; } = new();
+}
+
+public class CreateInvoiceItemRequest
+{
+    public int MedicineId { get; set; }
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+}
+
+public class InvoiceService
+{
+    private readonly AppDbContext _context;
+
+    public InvoiceService(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<Invoice> CreateInvoiceAsync(CreateInvoiceRequest request)
+    {
+        if (request.Items == null || request.Items.Count == 0)
+            throw new InvalidOperationException("الفاتورة يجب أن تحتوي على عنصر واحد على الأقل.");
+
+        var customer = await _context.Customers.FindAsync(request.CustomerId)
+            ?? throw new InvalidOperationException("العميل غير موجود.");
+
+        var invoice = new Invoice
+        {
+            InvoiceNumber = GenerateInvoiceNumber(),
+            CustomerId = customer.CustomerId,
+            CashierId = request.CashierId,
+            PaymentMethod = request.PaymentMethod,
+            PaymentStatus = request.PaymentStatus,
+            Notes = request.Notes,
+            InvoiceDate = DateTime.UtcNow,
+            CreatedDate = DateTime.UtcNow
+        };
+
+        var invoiceItems = new List<InvoiceItem>();
+        decimal total = 0m;
+
+        foreach (var itemRequest in request.Items)
+        {
+            var medicine = await _context.Medicines.FindAsync(itemRequest.MedicineId)
+                ?? throw new InvalidOperationException($"الدواء رقم {itemRequest.MedicineId} غير موجود.");
+
+            if (itemRequest.Quantity <= 0)
+                throw new InvalidOperationException($"الكمية للدواء {medicine.MedicineName} يجب أن تكون أكبر من صفر.");
+
+            if (medicine.CurrentStock < itemRequest.Quantity)
+                throw new InvalidOperationException($"الكمية المتاحة للدواء {medicine.MedicineName} غير كافية.");
+
+            var unitPrice = itemRequest.UnitPrice > 0 ? itemRequest.UnitPrice : medicine.SellingPrice;
+            var lineTotal = unitPrice * itemRequest.Quantity;
+            total += lineTotal;
+
+            medicine.CurrentStock -= itemRequest.Quantity;
+            medicine.ModifiedDate = DateTime.UtcNow;
+
+            invoiceItems.Add(new InvoiceItem
+            {
+                MedicineId = medicine.MedicineId,
+                Quantity = itemRequest.Quantity,
+                UnitPrice = unitPrice,
+                LineTotal = lineTotal,
+                ExpiryDate = medicine.ExpiryDate,
+                CreatedDate = DateTime.UtcNow
+            });
+        }
+
+        const decimal taxRate = 0.15m;
+        var taxAmount = total * taxRate;
+        var netAmount = total + taxAmount;
+
+        invoice.TotalAmount = total;
+        invoice.TaxAmount = taxAmount;
+        invoice.NetAmount = netAmount;
+        invoice.InvoiceItems = invoiceItems;
+
+        _context.Invoices.Add(invoice);
+        await _context.SaveChangesAsync();
+
+        return invoice;
+    }
+
+    public async Task<List<Invoice>> GetInvoicesAsync()
+    {
+        return await _context.Invoices
+            .Include(i => i.Customer)
+            .Include(i => i.InvoiceItems)
+            .ThenInclude(ii => ii.Medicine)
+            .OrderByDescending(i => i.InvoiceDate)
+            .ToListAsync();
+    }
+
+    private static string GenerateInvoiceNumber()
+    {
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        return $"INV-{timestamp}";
+    }
+}

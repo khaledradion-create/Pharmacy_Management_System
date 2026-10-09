@@ -1,38 +1,38 @@
 # نظام إدارة الصيدلية - Pharmacy Management System
 
-## نظرة عامة
-نظام متكامل لإدارة الصيدليات يتضمن:
-- ✅ إدارة المبيعات والفواتير
-- ✅ إدارة المخزون والأدوية
-- ✅ إدارة الموردين
-- ✅ التقارير والإحصائيات
-- ✅ لوحة تحكم (Dashboard)
-- ✅ إدارة العملاء
-- ✅ إدارة الموظفين
+## وصف المشروع
+نظام إدارة صيدلية متكامل يدعم:
+- إدارة المخزون والأدوية
+- إنشاء الفواتير ومتابعة المبيعات
+- إدارة الموردين والعملاء
+- لوحة تحكم (Dashboard)
+- التقارير والإحصائيات
+- اتصال مع قاعدة بيانات Oracle
 
-## التقنيات المستخدمة
-- **Backend**: C# .NET 6/7
-- **Database**: Oracle Database
-- **Frontend**: Windows Forms / WPF
-- **API**: ASP.NET Core Web API
+## البنية الحالية
+- API: ASP.NET Core
+- Database: Oracle
+- Business Layer: Services
+- Domain Model: Core Entities
 
-## هيكل المشروع
+## بداية التشغيل
+1. تثبيت .NET 8 SDK
+2. تثبيت Oracle Client / Oracle.ManagedDataAccess
+3. ضبط بيانات الاتصال في `src/PharmacyManagement.API/appsettings.json`
+4. تشغيل المشروع:
+
+```bash
+dotnet restore
+dotnet build
+dotnet run --project src/PharmacyManagement.API/PharmacyManagement.API.csproj
 ```
-PharmacyManagementSystem/
-├── PharmacyManagement.API/           # Web API
-├── PharmacyManagement.Desktop/       # تطبيق سطح المكتب
-├── PharmacyManagement.Core/          # الفئات الأساسية والنماذج
-├── PharmacyManagement.Data/          # طبقة البيانات و ORM
-├── PharmacyManagement.Services/      # الخدمات والمنطق التجاري
-├── Database/                         # ملفات قاعدة البيانات SQL
-└── Documentation/                    # الوثائق
-```
 
-## البدء السريع
-1. تثبيت Oracle Database
-2. تشغيل سكريبتات قاعدة البيانات
-3. تحديث سلسلة الاتصال في appsettings.json
-4. تشغيل التطبيق
+## نقاط الوصول الرئيسية
+- `GET /api/dashboard/summary`
+- `GET /api/dashboard/low-stock`
+- `GET /api/reports/monthly-sales`
+- `GET /api/invoices`
+- `POST /api/invoices`
 
-## المزيد من المعلومات
-راجع مجلد Documentation للتفاصيل الكاملة
+## ملاحظات
+هذا المشروع يمثل هيكلًا جاهزًا للتنفيذ الفعلي ويحتوي على منطق Dashboard وReports وInvoice System باستخدام Oracle EF Core.
