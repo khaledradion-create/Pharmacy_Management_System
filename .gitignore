@@ -1,0 +1,39 @@
+# Visual Studio
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# NuGet
+packages/
+*.nupkg
+*.snupkg
+
+# Rider
+.idea/
+*.sln.iml
+
+# Local appsettings with credentials
+appsettings.local.json
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
